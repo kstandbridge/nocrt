@@ -61,27 +61,65 @@ Win32InitAPI(win_32 *Result)
 internal void
 CreateControl(control_type ControlType, char *Text, s64 Id)
 {
-    char *Type = 0;
-    if(ControlType == ControlType_Button)
-    {
-        Type = "BUTTON";
-    }
-    
     control *Control = Win32State.Controls + Win32State.CurrentControl++;
     Assert(Win32State.CurrentControl < ArrayCount(Win32State.Controls));
     
     Control->Id = Id;
     Control->Type = ControlType;
-    Control->Hwnd = Win32.CreateWindowExA(WS_EX_CLIENTEDGE,
-                                          Type,
-                                          Text,
-                                          WS_VISIBLE|WS_CHILD,
-                                          10, 10,
-                                          100, 100,
-                                          Win32State.Window, 
-                                          (HMENU)Control->Id, 
-                                          Win32State.Instance, 
-                                          0);
+    
+    
+    switch(ControlType)
+    {
+        
+        case ControlType_Button:
+        {
+            Control->Hwnd = Win32.CreateWindowExA(WS_EX_CLIENTEDGE,
+                                                  "BUTTON",
+                                                  Text,
+                                                  WS_VISIBLE|WS_CHILD,
+                                                  10, 10,
+                                                  100, 100,
+                                                  Win32State.Window, 
+                                                  (HMENU)Control->Id, 
+                                                  Win32State.Instance, 
+                                                  0);
+        } break;
+        
+        case ControlType_Static:
+        {
+            Control->Hwnd = Win32.CreateWindowExA(0,
+                                                  "STATIC",
+                                                  Text,
+                                                  WS_VISIBLE|WS_CHILD,
+                                                  10, 10,
+                                                  100, 100,
+                                                  Win32State.Window, 
+                                                  (HMENU)Control->Id, 
+                                                  Win32State.Instance, 
+                                                  0);
+        } break;
+        
+        case ControlType_Edit:
+        {
+            Control->Hwnd = Win32.CreateWindowExA(0,
+                                                  "EDIT",
+                                                  Text,
+                                                  WS_VISIBLE|WS_CHILD,
+                                                  10, 10,
+                                                  100, 100,
+                                                  Win32State.Window, 
+                                                  (HMENU)Control->Id, 
+                                                  Win32State.Instance, 
+                                                  0);
+        } break;
+        
+        default:
+        {
+            InvalidCodePath;
+        } break;
+    }
+    
+    
     Assert(Control->Hwnd);
 }
 
@@ -120,9 +158,16 @@ Win32MainWindowCallback(HWND Window,
         
         case WM_COMMAND:
         {
-            if(GlobalApp.HandleCommand)
+            if(HIWORD(WParam) == EN_CHANGE)
             {
-                GlobalApp.HandleCommand(WParam);
+                // TODO(kstandbridge): Handle text changed?
+            }
+            else
+            {
+                if(GlobalApp.HandleCommand)
+                {
+                    GlobalApp.HandleCommand(WParam);
+                }
             }
             /*if(WParam == ID_BUTTON)
             {

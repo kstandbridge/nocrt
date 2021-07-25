@@ -10,7 +10,7 @@ void CreateControls(platform_api *PlatformAPI)
     Assert(PlatformAPI);
     Platform = PlatformAPI;
     
-    Platform->CreateControl(ControlType_Button, "Hello", ID_BUTTON);
+    Platform->CreateControl(ControlType_Edit, "Hello", ID_BUTTON);
 }
 
 void HandleCommand(s64 Id)

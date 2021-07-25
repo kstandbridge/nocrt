@@ -55,7 +55,9 @@ struct app_memory
 
 enum control_type
 {
-    ControlType_Button
+    ControlType_Button,
+    ControlType_Edit,
+    ControlType_Static,
 };
 typedef void create_control(control_type ControlType, char *Text, s64 Id);
 typedef void display_message(char *Title, char *Message);
