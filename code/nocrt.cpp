@@ -20,7 +20,7 @@ CreateControls(platform_api *PlatformAPI)
     
     //Platform->CreateControl(ID_WINDOW, ID_TOP_PANEL, ControlType_Static, "");
     Platform->CreateControl(ID_WINDOW, ID_TOP_STATIC, ControlType_Static, "Input:");
-    Platform->CreateControl(ID_WINDOW, ID_TOP_EDIT, ControlType_Edit, "something else");
+    Platform->CreateControl(ID_WINDOW, ID_TOP_EDIT, ControlType_Edit, "something foo");
     Platform->CreateControl(ID_WINDOW, ID_TOP_BUTTON, ControlType_Button, "Submit");
     
     //Platform->CreateControl(ID_WINDOW, ID_BOTTOM_PANEL, ControlType_Static, "");

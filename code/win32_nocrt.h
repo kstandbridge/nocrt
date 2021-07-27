@@ -5,6 +5,7 @@ typedef HWND create_window_ex_a(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWi
 typedef LRESULT def_window_proc_a(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 typedef BOOL destroy_window(HWND hWnd);
 typedef LRESULT dispatch_message_a(const MSG *lpMsg);
+typedef BOOL get_client_rect(HWND hWnd, RECT *lpRect);
 typedef HWND get_dlg_item(HWND hDlg, int nIDDlgItem);
 typedef HGDIOBJ get_stock_object(int i);
 typedef int get_window_text_a(HWND hWnd, LPSTR lpString, int nMaxCount);
@@ -12,6 +13,7 @@ typedef HCURSOR load_cursor_a(HINSTANCE hInstance, LPCSTR lpCursorName);
 typedef BOOL peek_message_a(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
 typedef ATOM register_class_a(const WNDCLASSA *lpWndClass);
 typedef int message_box_a(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
+typedef BOOL move_window(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
 typedef LRESULT send_message_a(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 typedef BOOL set_window_text_a(HWND hWnd, LPCSTR lpString);
 typedef MMRESULT time_begin_period(UINT uPeriod);
@@ -23,6 +25,7 @@ struct win_32
     def_window_proc_a *DefWindowProcA;
     destroy_window *DestroyWindow;
     dispatch_message_a *DispatchMessageA;
+    get_client_rect *GetClientRect;
     get_dlg_item *GetDlgItem;
     get_stock_object *GetStockObject;
     get_window_text_a *GetWindowTextA;
@@ -30,6 +33,7 @@ struct win_32
     peek_message_a *PeekMessageA;
     register_class_a *RegisterClassA;
     message_box_a *MessageBoxA;
+    move_window *MoveWindow;
     send_message_a *SendMessageA;
     set_window_text_a *SetWindowTextA;
     time_begin_period *TimeBeginPeriod;

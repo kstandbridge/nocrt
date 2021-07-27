@@ -1,4 +1,3 @@
-
 #include "nocrt_platform.h"
 
 #include <windows.h>
@@ -14,7 +13,6 @@ global_variable s64 GlobalPerfCountFrequency;
 internal void
 Win32InitAPI(win_32 *Result)
 {
-    
     HMODULE Gdi32Library = LoadLibraryA("Gdi32.dll");
     Assert(Gdi32Library);
     
@@ -36,6 +34,9 @@ Win32InitAPI(win_32 *Result)
     Result->DispatchMessageA = (dispatch_message_a *)GetProcAddress(User32Library, "DispatchMessageA");
     Assert(Result->DispatchMessageA);
     
+    Result->GetClientRect = (get_client_rect *)GetProcAddress(User32Library, "GetClientRect");
+    Assert(Result->GetClientRect);
+    
     Result->GetDlgItem = (get_dlg_item *)GetProcAddress(User32Library, "GetDlgItem");
     Assert(Result->GetDlgItem);
     
@@ -56,6 +57,9 @@ Win32InitAPI(win_32 *Result)
     
     Result->MessageBoxA = (message_box_a *)GetProcAddress(User32Library, "MessageBoxA");
     Assert(Result->MessageBoxA);
+    
+    Result->MoveWindow = (move_window *)GetProcAddress(User32Library, "MoveWindow");
+    Assert(Result->MoveWindow);
     
     Result->SendMessageA = (send_message_a *)GetProcAddress(User32Library, "SendMessageA");
     Assert(Result->SendMessageA);
@@ -94,6 +98,40 @@ Win32DestroyControls(control *Controls)
     Win32State.Controls = 0;
 }
 
+internal void
+Win32SizeControls(control *Controls)
+{
+    
+    s32 ControlCount = 0;
+    HWND ParentHwnd = 0;
+    for(control *Control = Controls;
+        Control;
+        Control = Control->NextControl)
+    {
+        Assert((ParentHwnd == 0) || (ParentHwnd == Control->ParentHwnd));
+        ParentHwnd = Control->ParentHwnd;
+        
+        ++ControlCount;
+    }
+    if(ControlCount > 0)
+    {
+        RECT Rect = {};
+        Win32.GetClientRect(ParentHwnd, &Rect);
+        s32 X = 0;
+        s32 Y = 0;
+        s32 Width = (Rect.right - Rect.left)/ControlCount;
+        s32 Height = Rect.bottom - Rect.top;
+        for(control *Control = Win32State.Controls;
+            Control;
+            Control = Control->NextControl)
+        {
+            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, TRUE);
+            X += Width;
+        }
+    }
+    
+}
+
 // TODO(kstandbridge): SizeControls
 /*
 sizecontrolsraw(control* controls, s32 controlCount)
@@ -106,6 +144,8 @@ foreach control in controls
 - - if(child.childcount > 0)
 - - - sizecontrolsraw(child.children) // recursion
 */
+
+
 
 
 internal void
@@ -259,11 +299,6 @@ Win32InitPlatformAPI(platform_api *PlatformAPI)
     PlatformAPI->SetControlText = SetControlText;
 }
 
-extern "C"
-{
-    int _fltused;
-}
-
 internal LRESULT CALLBACK
 Win32MainWindowCallback(HWND Window,
                         UINT Message,
@@ -274,6 +309,11 @@ Win32MainWindowCallback(HWND Window,
     
     switch(Message)
     {
+        case WM_SIZE:
+        {
+            Win32SizeControls(Win32State.Controls);
+        } break;
+        
         case WM_CLOSE:
         {
             Win32State.IsRunning = false;
@@ -549,6 +589,8 @@ WinMain(HINSTANCE Instance,
             {
                 GlobalApp.CreateControls(&PlatformAPI);
             }
+            
+            Win32SizeControls(Win32State.Controls);
         }
         
         LARGE_INTEGER WorkCounter = Win32GetWallClock();
