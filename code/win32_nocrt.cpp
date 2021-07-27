@@ -15,6 +15,9 @@ internal void
 Win32InitAPI(win_32 *Result)
 {
     
+    HMODULE Gdi32Library = LoadLibraryA("Gdi32.dll");
+    Assert(Gdi32Library);
+    
     HMODULE User32Library = LoadLibraryA("User32.dll");
     Assert(User32Library);
     
@@ -36,6 +39,12 @@ Win32InitAPI(win_32 *Result)
     Result->GetDlgItem = (get_dlg_item *)GetProcAddress(User32Library, "GetDlgItem");
     Assert(Result->GetDlgItem);
     
+    Result->GetStockObject = (get_stock_object *)GetProcAddress(Gdi32Library, "GetStockObject");
+    Assert(Result->GetStockObject);
+    
+    Result->GetWindowTextA = (get_window_text_a *)GetProcAddress(User32Library, "GetWindowTextA");
+    Assert(Result->GetWindowTextA);
+    
     Result->LoadCursorA = (load_cursor_a *)GetProcAddress(User32Library, "LoadCursorA");
     Assert(Result->LoadCursorA);
     
@@ -48,6 +57,9 @@ Win32InitAPI(win_32 *Result)
     Result->MessageBoxA = (message_box_a *)GetProcAddress(User32Library, "MessageBoxA");
     Assert(Result->MessageBoxA);
     
+    Result->SendMessageA = (send_message_a *)GetProcAddress(User32Library, "SendMessageA");
+    Assert(Result->SendMessageA);
+    
     Result->SetWindowTextA = (set_window_text_a *)GetProcAddress(User32Library, "SetWindowTextA");
     Assert(Result->SetWindowTextA);
     
@@ -59,31 +71,91 @@ Win32InitAPI(win_32 *Result)
 }
 
 internal void
-CreateControl(control_type ControlType, char *Text, s64 Id)
+Win32DestroyControls(control *Controls)
 {
-    control *Control = Win32State.Controls + Win32State.CurrentControl++;
-    Assert(Win32State.CurrentControl < ArrayCount(Win32State.Controls));
+    for(control *Control = Win32State.Controls;
+        Control;
+        )
+    {
+        if(Control->Hwnd)
+        {
+            Assert(Win32.DestroyWindow(Control->Hwnd));
+            Control->Id = 0;
+            Control->Hwnd = 0;
+            Control->Type = (control_type)0;
+            control *NextControl = Control->NextControl;
+            control *DeletedControl = Control;
+            DeletedControl->NextControl = Win32State.FirstFreeControl;
+            Win32State.FirstFreeControl = DeletedControl;
+            
+            Control = NextControl;
+        }
+    }
+    Win32State.Controls = 0;
+}
+
+// TODO(kstandbridge): SizeControls
+/*
+sizecontrolsraw(control* controls, s32 controlCount)
+foreach control in controls
+- rect = getclientrect(control.parenthwnd)
+- w = rect.w / control.childcount
+- h = rect.h
+- foreach child in control.children
+- - movewindow(child.hwnd, x, y, w, h)
+- - if(child.childcount > 0)
+- - - sizecontrolsraw(child.children) // recursion
+*/
+
+
+internal void
+CreateControl(s64 ParentId, s64 ControlId, control_type ControlType, char *Text)
+{
+    Assert(ParentId == ID_WINDOW);
     
-    Control->Id = Id;
+    control *Control = 0;
+    
+    if(Win32State.FirstFreeControl != 0)
+    {
+        control *FreeControl = Win32State.FirstFreeControl;
+        Win32State.FirstFreeControl = FreeControl->NextControl;
+        FreeControl->NextControl = Win32State.Controls;
+        Win32State.Controls = FreeControl;
+        
+        Control = FreeControl;
+    }
+    else
+    {
+        Control = Win32State.Controls;
+        while(Control != 0)
+        {
+            Control = Control->NextControl;
+        }
+        Control = PushStruct(&Win32State.Arena, control);
+        Control->NextControl = Win32State.Controls;
+        Win32State.Controls = Control;
+    }
+    
+    Assert(Control);
+    
+    if(ParentId == ID_WINDOW)
+    {
+        Control->ParentId = ID_WINDOW;
+        Control->ParentHwnd = Win32State.WindowHwnd;
+    }
+    else
+    {
+        InvalidCodePath;
+        // TODO(kstandbridge): RecursiveControls
+        //Control->ParentId = ParentControl->Id;
+        //Control->ParentHwnd = ParentControl->Hwnd;
+    }
+    
+    Control->Id = ControlId;
     Control->Type = ControlType;
-    
     
     switch(ControlType)
     {
-        
-        case ControlType_Button:
-        {
-            Control->Hwnd = Win32.CreateWindowExA(WS_EX_CLIENTEDGE,
-                                                  "BUTTON",
-                                                  Text,
-                                                  WS_VISIBLE|WS_CHILD,
-                                                  10, 10,
-                                                  100, 100,
-                                                  Win32State.Window, 
-                                                  (HMENU)Control->Id, 
-                                                  Win32State.Instance, 
-                                                  0);
-        } break;
         
         case ControlType_Static:
         {
@@ -93,7 +165,7 @@ CreateControl(control_type ControlType, char *Text, s64 Id)
                                                   WS_VISIBLE|WS_CHILD,
                                                   10, 10,
                                                   100, 100,
-                                                  Win32State.Window, 
+                                                  Win32State.WindowHwnd, 
                                                   (HMENU)Control->Id, 
                                                   Win32State.Instance, 
                                                   0);
@@ -105,9 +177,23 @@ CreateControl(control_type ControlType, char *Text, s64 Id)
                                                   "EDIT",
                                                   Text,
                                                   WS_VISIBLE|WS_CHILD,
-                                                  10, 10,
+                                                  210, 10,
                                                   100, 100,
-                                                  Win32State.Window, 
+                                                  Win32State.WindowHwnd, 
+                                                  (HMENU)Control->Id, 
+                                                  Win32State.Instance, 
+                                                  0);
+        } break;
+        
+        case ControlType_Button:
+        {
+            Control->Hwnd = Win32.CreateWindowExA(0,
+                                                  "BUTTON",
+                                                  Text,
+                                                  WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,
+                                                  410, 10,
+                                                  100, 100,
+                                                  Win32State.WindowHwnd, 
                                                   (HMENU)Control->Id, 
                                                   Win32State.Instance, 
                                                   0);
@@ -119,6 +205,7 @@ CreateControl(control_type ControlType, char *Text, s64 Id)
         } break;
     }
     
+    Win32.SendMessageA(Control->Hwnd, WM_SETFONT, (LPARAM)Win32.GetStockObject(DEFAULT_GUI_FONT), TRUE);
     
     Assert(Control->Hwnd);
 }
@@ -126,7 +213,41 @@ CreateControl(control_type ControlType, char *Text, s64 Id)
 internal void
 DisplayMessage(char *Title, char *Message)
 {
-    Win32.MessageBox(Win32State.Window, Title, Message, MB_OK);
+    Win32.MessageBox(Win32State.WindowHwnd, Title, Message, MB_OK);
+}
+
+internal control *
+GetControlById(s64 ControlId)
+{
+    control *Result = 0;
+    
+    for(control *Control = Win32State.Controls;
+        Control;
+        Control = Control->NextControl)
+    {
+        if(Control->Id == ControlId)
+        {
+            Result = Control;
+            break;
+        }
+    }
+    Assert(Result);
+    
+    return(Result);
+}
+
+internal void
+GetControlText(s64 ControlId, char *Buffer, s32 BufferSize)
+{
+    control *Control = GetControlById(ControlId);
+    Win32.GetWindowTextA(Control->Hwnd, Buffer, BufferSize);
+}
+
+internal void
+SetControlText(s64 ControlId, char *Buffer)
+{
+    control *Control = GetControlById(ControlId);
+    Win32.SetWindowTextA(Control->Hwnd, Buffer);
 }
 
 internal void
@@ -134,6 +255,8 @@ Win32InitPlatformAPI(platform_api *PlatformAPI)
 {
     PlatformAPI->CreateControl = CreateControl;
     PlatformAPI->DisplayMessage = DisplayMessage;
+    PlatformAPI->GetControlText = GetControlText;
+    PlatformAPI->SetControlText = SetControlText;
 }
 
 extern "C"
@@ -169,17 +292,6 @@ Win32MainWindowCallback(HWND Window,
                     GlobalApp.HandleCommand(WParam);
                 }
             }
-            /*if(WParam == ID_BUTTON)
-            {
-                HWND HwndButton = Win32.GetDlgItem(Window, ID_BUTTON);
-                Assert(HwndButton);
-                Win32.SetWindowTextA(HwndButton, "World");
-            }
-            else
-            {
-                Win32.SetWindowTextA(Window, "Failed");
-            }
-            */
         } break;
         
         default:
@@ -361,23 +473,41 @@ WinMain(HINSTANCE Instance,
     
     Assert(Win32.RegisterClassA(&WindowClass));
     
-    Win32State.Window = Win32.CreateWindowExA(WS_EX_CLIENTEDGE,
-                                              WindowClass.lpszClassName,
-                                              "No CRT",
-                                              WS_OVERLAPPEDWINDOW|WS_VISIBLE,
-                                              CW_USEDEFAULT,
-                                              CW_USEDEFAULT,
-                                              CW_USEDEFAULT,
-                                              CW_USEDEFAULT,
-                                              0,
-                                              0,
-                                              Win32State.Instance,
-                                              &Win32State);
-    Assert(Win32State.Window);
+    Win32State.WindowHwnd = Win32.CreateWindowExA(WS_EX_CLIENTEDGE,
+                                                  WindowClass.lpszClassName,
+                                                  "No CRT",
+                                                  WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                                                  CW_USEDEFAULT,
+                                                  CW_USEDEFAULT,
+                                                  CW_USEDEFAULT,
+                                                  CW_USEDEFAULT,
+                                                  0,
+                                                  0,
+                                                  Win32State.Instance,
+                                                  &Win32State);
+    Assert(Win32State.WindowHwnd);
     
     
     platform_api PlatformAPI;
     Win32InitPlatformAPI(&PlatformAPI);
+    
+#if NOCRT_INTERNAL
+    LPVOID BaseAddress = (LPVOID)Terabytes(2);
+#else
+    LPVOID BaseAddress = 0;
+#endif
+    
+    app_memory AppMemory = {};
+    AppMemory.PermanentStorageSize = Megabytes(4);
+    AppMemory.TransientStorageSize = Megabytes(4);
+    Win32State.TotalSize = AppMemory.PermanentStorageSize + AppMemory.TransientStorageSize;
+    Win32State.AppMemoryBlock = VirtualAlloc(BaseAddress, (memory_index)Win32State.TotalSize,
+                                             MEM_RESERVE|MEM_COMMIT,
+                                             PAGE_READWRITE);
+    AppMemory.PermanentStorage = Win32State.AppMemoryBlock;
+    AppMemory.TransientStorage = ((u8 *)AppMemory.PermanentStorage + AppMemory.PermanentStorageSize);
+    
+    InitializeArena(&Win32State.Arena, Megabytes(4), AppMemory.PermanentStorage);
     
     int MonitorRefreshHz = 60;
     // TODO(kstandbridge): Get monitor refresh rate?
@@ -411,18 +541,7 @@ WinMain(HINSTANCE Instance,
         {
             Win32UnloadAppCode(&GlobalApp);
             
-            for(s32 ControlIndex = 0;
-                ControlIndex < ArrayCount(Win32State.Controls);
-                ++ControlIndex)
-            {
-                control *Control = Win32State.Controls + ControlIndex;
-                if(Control->Id)
-                {
-                    Control->Id = 0;
-                    Assert(Win32.DestroyWindow(Control->Hwnd));
-                }
-            }
-            Win32State.CurrentControl = 0;
+            Win32DestroyControls(Win32State.Controls);
             
             GlobalApp = Win32LoadAppCode(SourceAppCodeDLLFullPath, TempAppCodeDLLFullPath, AppCodeLockFullPath);
             

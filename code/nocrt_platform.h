@@ -53,20 +53,66 @@ struct app_memory
     void *TransientStorage; // NOTE(kstandbridge): REQUIRED to be cleared to zero at startup
 };
 
+struct memory_arena
+{
+    memory_index Size;
+    u8 *Base;
+    memory_index Used;
+};
+
+inline void
+InitializeArena(memory_arena *Arena, memory_index Size, void *Base)
+{
+    Arena->Size = Size;
+    Arena->Base = (u8 *)Base;
+    Arena->Used = 0;
+}
+
+#define PushStruct(Arena, type) (type *)PushSize_(Arena, sizeof(type))
+#define PushArray(Arena, Count, type) (type *)PushSize_(Arena, (Count)*sizeof(type))
+inline void *
+PushSize_(memory_arena *Arena, memory_index Size)
+{
+    Assert((Arena->Used + Size) <= Arena->Size);
+    void *Result = Arena->Base + Arena->Used;
+    Arena->Used += Size;
+    
+    return(Result);
+}
+
+#define ZeroStruct(Instance) ZeroSize(sizeof(Instance), &(Instance))
+inline void
+ZeroSize(memory_index Size, void *Ptr)
+{
+    // TODO(kstandbridge): Check this guy for performance
+    u8 *Byte = (u8 *)Ptr;
+    while(Size--)
+    {
+        *Byte++ = 0;
+    }
+}
+
 enum control_type
 {
     ControlType_Button,
     ControlType_Edit,
     ControlType_Static,
 };
-typedef void create_control(control_type ControlType, char *Text, s64 Id);
+typedef void create_control(s64 ParentId, s64 ControlId, control_type ControlType, char *Text);
 typedef void display_message(char *Title, char *Message);
+typedef void get_control_text(s64 ControlId, char *Buffer, s32 BufferSize);
+typedef void set_control_text(s64 ControlId, char *Buffer);
 struct platform_api
 {
     create_control *CreateControl;
     display_message *DisplayMessage;
+    get_control_text *GetControlText;
+    set_control_text *SetControlText;
+    
 };
 
 typedef void create_controls(platform_api *PlatformAPI);
 typedef void handle_command(s64 Id);
 #endif //NOCRT_PLATFORM_H
+
+#define ID_WINDOW 0

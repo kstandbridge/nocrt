@@ -1,0 +1,7 @@
+#include <windows.h>
+
+#include "win32_resource.h"
+
+IDR_RT_MANIFEST RT_MANIFEST "win32_nocrt.exe.manifest"
+
+//IDI_ICON ICON "favicon.ico"
