@@ -40,11 +40,17 @@ Win32InitAPI(win_32 *Result)
     Result->GetDlgItem = (get_dlg_item *)GetProcAddress(User32Library, "GetDlgItem");
     Assert(Result->GetDlgItem);
     
+    Result->GetParent = (get_partent *)GetProcAddress(User32Library, "GetParent");
+    Assert(Result->GetParent);
+    
     Result->GetStockObject = (get_stock_object *)GetProcAddress(Gdi32Library, "GetStockObject");
     Assert(Result->GetStockObject);
     
     Result->GetWindowTextA = (get_window_text_a *)GetProcAddress(User32Library, "GetWindowTextA");
     Assert(Result->GetWindowTextA);
+    
+    Result->InvalidateRect = (invalidate_rect *)GetProcAddress(User32Library, "InvalidateRect");
+    Assert(Result->InvalidateRect);
     
     Result->LoadCursorA = (load_cursor_a *)GetProcAddress(User32Library, "LoadCursorA");
     Assert(Result->LoadCursorA);
@@ -54,6 +60,9 @@ Win32InitAPI(win_32 *Result)
     
     Result->RegisterClassA = (register_class_a *)GetProcAddress(User32Library, "RegisterClassA");
     Assert(Result->RegisterClassA);
+    
+    Result->MapWindowPoints = (map_window_points *)GetProcAddress(User32Library, "MapWindowPoints");
+    Assert(Result->MapWindowPoints);
     
     Result->MessageBoxA = (message_box_a *)GetProcAddress(User32Library, "MessageBoxA");
     Assert(Result->MessageBoxA);
@@ -77,16 +86,21 @@ Win32InitAPI(win_32 *Result)
 internal void
 Win32DestroyControls(control *Controls)
 {
-    for(control *Control = Win32State.Controls;
+    for(control *Control = Controls;
         Control;
         )
     {
         if(Control->Hwnd)
         {
             Assert(Win32.DestroyWindow(Control->Hwnd));
+            if(Control->Children)
+            {
+                Win32DestroyControls(Control->Children);
+            }
             Control->Id = 0;
             Control->Hwnd = 0;
             Control->Type = (control_type)0;
+            Control->Children = 0;
             control *NextControl = Control->NextControl;
             control *DeletedControl = Control;
             DeletedControl->NextControl = Win32State.FirstFreeControl;
@@ -99,9 +113,9 @@ Win32DestroyControls(control *Controls)
 }
 
 internal void
-Win32SizeControls(control *Controls)
+Win32SizeControls_(control *Controls)
 {
-    
+    // NOTE(kstandbridge): Get control count
     s32 ControlCount = 0;
     HWND ParentHwnd = 0;
     for(control *Control = Controls;
@@ -113,23 +127,42 @@ Win32SizeControls(control *Controls)
         
         ++ControlCount;
     }
+    
     if(ControlCount > 0)
     {
         RECT Rect = {};
         Win32.GetClientRect(ParentHwnd, &Rect);
-        s32 X = 0;
-        s32 Y = 0;
+        if(ParentHwnd != Win32State.WindowHwnd)
+        {
+            HWND GrandParentHwnd = Win32.GetParent(ParentHwnd);
+            Assert(GrandParentHwnd);
+            Assert(Win32.MapWindowPoints(ParentHwnd, GrandParentHwnd, (POINT *)&Rect, 2));
+        }
+        s32 X = Rect.left;
+        s32 Y = Rect.top;
         s32 Width = (Rect.right - Rect.left)/ControlCount;
         s32 Height = Rect.bottom - Rect.top;
-        for(control *Control = Win32State.Controls;
+        for(control *Control = Controls;
             Control;
             Control = Control->NextControl)
         {
-            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, TRUE);
+            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, FALSE);
             X += Width;
+            if(Control->Children)
+            {
+                Win32SizeControls_(Control->Children);
+            }
         }
     }
-    
+}
+
+internal void
+Win32SizeControls(control *Controls)
+{
+    Win32SizeControls_(Controls);
+    RECT ClientRect;
+    Win32.GetClientRect(Win32State.WindowHwnd, &ClientRect);
+    Win32.InvalidateRect(Win32State.WindowHwnd, &ClientRect, TRUE);
 }
 
 // TODO(kstandbridge): SizeControls
@@ -148,53 +181,99 @@ foreach control in controls
 
 
 
-internal void
-CreateControl(s64 ParentId, s64 ControlId, control_type ControlType, char *Text)
+internal control *
+GetControlById(control *Controls, s64 ControlId)
 {
-    Assert(ParentId == ID_WINDOW);
+    control *Result = 0;
     
-    control *Control = 0;
-    
-    if(Win32State.FirstFreeControl != 0)
+    for(control *Control = Controls;
+        Control;
+        Control = Control->NextControl)
     {
-        control *FreeControl = Win32State.FirstFreeControl;
-        Win32State.FirstFreeControl = FreeControl->NextControl;
-        FreeControl->NextControl = Win32State.Controls;
-        Win32State.Controls = FreeControl;
-        
-        Control = FreeControl;
-    }
-    else
-    {
-        Control = Win32State.Controls;
-        while(Control != 0)
+        if(Control->Children)
         {
-            Control = Control->NextControl;
+            Result = GetControlById(Control->Children, ControlId);
+            if(Result)
+            {
+                break;
+            }
         }
-        Control = PushStruct(&Win32State.Arena, control);
-        Control->NextControl = Win32State.Controls;
-        Win32State.Controls = Control;
+        if(Control->Id == ControlId)
+        {
+            Result = Control;
+            break;
+        }
     }
     
-    Assert(Control);
+    return(Result);
+}
+
+internal void
+CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
+{
+    control *Control = 0;
     
     if(ParentId == ID_WINDOW)
     {
+        if(Win32State.FirstFreeControl != 0)
+        {
+            control *FreeControl = Win32State.FirstFreeControl;
+            Win32State.FirstFreeControl = FreeControl->NextControl;
+            FreeControl->NextControl = Win32State.Controls;
+            Win32State.Controls = FreeControl;
+            
+            Control = FreeControl;
+        }
+        else
+        {
+            Control = Win32State.Controls;
+            while(Control != 0)
+            {
+                Control = Control->NextControl;
+            }
+            Control = PushStruct(&Win32State.Arena, control);
+            Control->NextControl = Win32State.Controls;
+            Win32State.Controls = Control;
+        }
+        
+        Assert(Control);
         Control->ParentId = ID_WINDOW;
         Control->ParentHwnd = Win32State.WindowHwnd;
     }
     else
     {
-        InvalidCodePath;
-        // TODO(kstandbridge): RecursiveControls
-        //Control->ParentId = ParentControl->Id;
-        //Control->ParentHwnd = ParentControl->Hwnd;
+        control *ParentControl = GetControlById(Win32State.Controls, ParentId);
+        Assert(ParentControl);
+        
+        if(Win32State.FirstFreeControl != 0)
+        {
+            control *FreeControl = Win32State.FirstFreeControl;
+            Win32State.FirstFreeControl = FreeControl->NextControl;
+            FreeControl->NextControl = ParentControl->Children;
+            ParentControl->Children = FreeControl;
+            Control = FreeControl;
+        }
+        else
+        {
+            Control = ParentControl->Children;
+            while(Control != 0)
+            {
+                Control = Control->NextControl;
+            }
+            Control = PushStruct(&Win32State.Arena, control);
+            Control->NextControl = ParentControl->Children;
+            ParentControl->Children = Control;
+        }
+        
+        Assert(Control);
+        Control->ParentId = ParentControl->Id;
+        Control->ParentHwnd = ParentControl->Hwnd;
     }
     
-    Control->Id = ControlId;
-    Control->Type = ControlType;
+    Control->Id = Id;
+    Control->Type = Type;
     
-    switch(ControlType)
+    switch(Type)
     {
         
         case ControlType_Static:
@@ -256,37 +335,19 @@ DisplayMessage(char *Title, char *Message)
     Win32.MessageBox(Win32State.WindowHwnd, Title, Message, MB_OK);
 }
 
-internal control *
-GetControlById(s64 ControlId)
-{
-    control *Result = 0;
-    
-    for(control *Control = Win32State.Controls;
-        Control;
-        Control = Control->NextControl)
-    {
-        if(Control->Id == ControlId)
-        {
-            Result = Control;
-            break;
-        }
-    }
-    Assert(Result);
-    
-    return(Result);
-}
-
 internal void
 GetControlText(s64 ControlId, char *Buffer, s32 BufferSize)
 {
-    control *Control = GetControlById(ControlId);
+    control *Control = GetControlById(Win32State.Controls, ControlId);
+    Assert(Control);
     Win32.GetWindowTextA(Control->Hwnd, Buffer, BufferSize);
 }
 
 internal void
 SetControlText(s64 ControlId, char *Buffer)
 {
-    control *Control = GetControlById(ControlId);
+    control *Control = GetControlById(Win32State.Controls, ControlId);
+    Assert(Control);
     Win32.SetWindowTextA(Control->Hwnd, Buffer);
 }
 
@@ -591,6 +652,7 @@ WinMain(HINSTANCE Instance,
             }
             
             Win32SizeControls(Win32State.Controls);
+            
         }
         
         LARGE_INTEGER WorkCounter = Win32GetWallClock();

@@ -98,7 +98,7 @@ enum control_type
     ControlType_Edit,
     ControlType_Static,
 };
-typedef void create_control(s64 ParentId, s64 ControlId, control_type ControlType, char *Text);
+typedef void create_control(s64 ParentId, s64 ControlId, control_type Type, char *Text);
 typedef void display_message(char *Title, char *Message);
 typedef void get_control_text(s64 ControlId, char *Buffer, s32 BufferSize);
 typedef void set_control_text(s64 ControlId, char *Buffer);

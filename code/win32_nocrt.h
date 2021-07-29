@@ -7,11 +7,14 @@ typedef BOOL destroy_window(HWND hWnd);
 typedef LRESULT dispatch_message_a(const MSG *lpMsg);
 typedef BOOL get_client_rect(HWND hWnd, RECT *lpRect);
 typedef HWND get_dlg_item(HWND hDlg, int nIDDlgItem);
+typedef HWND get_partent(HWND hWnd);
 typedef HGDIOBJ get_stock_object(int i);
 typedef int get_window_text_a(HWND hWnd, LPSTR lpString, int nMaxCount);
+typedef BOOL invalidate_rect(HWND hWnd, const RECT *lpRect, BOOL bErase);
 typedef HCURSOR load_cursor_a(HINSTANCE hInstance, LPCSTR lpCursorName);
 typedef BOOL peek_message_a(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
 typedef ATOM register_class_a(const WNDCLASSA *lpWndClass);
+typedef int map_window_points(HWND hWndFrom, HWND hWndTo, LPPOINT lpPoints, UINT cPoints);
 typedef int message_box_a(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 typedef BOOL move_window(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
 typedef LRESULT send_message_a(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -27,11 +30,14 @@ struct win_32
     dispatch_message_a *DispatchMessageA;
     get_client_rect *GetClientRect;
     get_dlg_item *GetDlgItem;
+    get_partent *GetParent;
     get_stock_object *GetStockObject;
     get_window_text_a *GetWindowTextA;
+    invalidate_rect *InvalidateRect;
     load_cursor_a *LoadCursorA;
     peek_message_a *PeekMessageA;
     register_class_a *RegisterClassA;
+    map_window_points *MapWindowPoints;
     message_box_a *MessageBoxA;
     move_window *MoveWindow;
     send_message_a *SendMessageA;
@@ -60,7 +66,7 @@ struct control
     
     control_type Type;
     
-    //control *Children;
+    control *Children;
     
     control *NextControl;
 };
