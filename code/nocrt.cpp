@@ -1,14 +1,13 @@
 #include "nocrt.h"
 // TODO(kstandbridge): cpp files here
 
-#define ID_BUTTON 1234
 
-#define ID_TOP_PANEL 1000
-#define ID_TOP_STATIC 1001
-#define ID_TOP_EDIT 1002
-#define ID_TOP_BUTTON 1003
-
-#define ID_BOTTOM_PANEL 2000
+#define ID_MAIN 1000
+#define ID_TOP_PANEL 1100
+#define ID_TOP_STATIC 1101
+#define ID_TOP_EDIT 1102
+#define ID_TOP_BUTTON 1103
+#define ID_BOTTOM_PANEL 1200
 
 global_variable platform_api *Platform;
 
@@ -18,13 +17,14 @@ CreateControls(platform_api *PlatformAPI)
     Assert(PlatformAPI);
     Platform = PlatformAPI;
     
-    Platform->CreateControl(ID_WINDOW, ID_TOP_PANEL, ControlType_Static, "TOP HERE");
+    Platform->CreateControl(ID_WINDOW, ID_MAIN, ControlType_Static, "");
     
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_STATIC, ControlType_Static, "Input:");
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_EDIT, ControlType_Edit, "something foo");
+    Platform->CreateControl(ID_MAIN, ID_TOP_PANEL, ControlType_Static, "TOP HERE");
     Platform->CreateControl(ID_TOP_PANEL, ID_TOP_BUTTON, ControlType_Button, "Submit");
+    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_EDIT, ControlType_Edit, "something foo");
+    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_STATIC, ControlType_Static, "Input:");
     
-    Platform->CreateControl(ID_WINDOW, ID_BOTTOM_PANEL, ControlType_Static, "BOTTOM HERE");
+    Platform->CreateControl(ID_MAIN, ID_BOTTOM_PANEL, ControlType_Static, "BOTTOM HERE");
 }
 
 void

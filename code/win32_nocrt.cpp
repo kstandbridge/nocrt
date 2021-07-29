@@ -109,7 +109,7 @@ Win32DestroyControls(control *Controls)
             Control = NextControl;
         }
     }
-    Win32State.Controls = 0;
+    Win32State.SentinalControl.Children = 0;
 }
 
 internal void
@@ -136,7 +136,7 @@ Win32SizeControls_(control *Controls)
         {
             HWND GrandParentHwnd = Win32.GetParent(ParentHwnd);
             Assert(GrandParentHwnd);
-            Assert(Win32.MapWindowPoints(ParentHwnd, GrandParentHwnd, (POINT *)&Rect, 2));
+            Win32.MapWindowPoints(ParentHwnd, GrandParentHwnd, (POINT *)&Rect, 2);
         }
         s32 X = Rect.left;
         s32 Y = Rect.top;
@@ -215,25 +215,27 @@ CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
     
     if(ParentId == ID_WINDOW)
     {
+        Assert(Win32State.SentinalControl.Children == 0);
+        
         if(Win32State.FirstFreeControl != 0)
         {
             control *FreeControl = Win32State.FirstFreeControl;
             Win32State.FirstFreeControl = FreeControl->NextControl;
-            FreeControl->NextControl = Win32State.Controls;
-            Win32State.Controls = FreeControl;
+            FreeControl->NextControl = Win32State.SentinalControl.Children;
+            Win32State.SentinalControl.Children = FreeControl;
             
             Control = FreeControl;
         }
         else
         {
-            Control = Win32State.Controls;
+            Control = Win32State.SentinalControl.Children;
             while(Control != 0)
             {
                 Control = Control->NextControl;
             }
             Control = PushStruct(&Win32State.Arena, control);
-            Control->NextControl = Win32State.Controls;
-            Win32State.Controls = Control;
+            Control->NextControl = Win32State.SentinalControl.Children;
+            Win32State.SentinalControl.Children = Control;
         }
         
         Assert(Control);
@@ -242,7 +244,9 @@ CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
     }
     else
     {
-        control *ParentControl = GetControlById(Win32State.Controls, ParentId);
+        Assert(Win32State.SentinalControl.Children);
+        
+        control *ParentControl = GetControlById(Win32State.SentinalControl.Children, ParentId);
         Assert(ParentControl);
         
         if(Win32State.FirstFreeControl != 0)
@@ -338,7 +342,7 @@ DisplayMessage(char *Title, char *Message)
 internal void
 GetControlText(s64 ControlId, char *Buffer, s32 BufferSize)
 {
-    control *Control = GetControlById(Win32State.Controls, ControlId);
+    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
     Assert(Control);
     Win32.GetWindowTextA(Control->Hwnd, Buffer, BufferSize);
 }
@@ -346,7 +350,7 @@ GetControlText(s64 ControlId, char *Buffer, s32 BufferSize)
 internal void
 SetControlText(s64 ControlId, char *Buffer)
 {
-    control *Control = GetControlById(Win32State.Controls, ControlId);
+    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
     Assert(Control);
     Win32.SetWindowTextA(Control->Hwnd, Buffer);
 }
@@ -372,7 +376,7 @@ Win32MainWindowCallback(HWND Window,
     {
         case WM_SIZE:
         {
-            Win32SizeControls(Win32State.Controls);
+            Win32SizeControls(Win32State.SentinalControl.Children);
         } break;
         
         case WM_CLOSE:
@@ -642,7 +646,7 @@ WinMain(HINSTANCE Instance,
         {
             Win32UnloadAppCode(&GlobalApp);
             
-            Win32DestroyControls(Win32State.Controls);
+            Win32DestroyControls(Win32State.SentinalControl.Children);
             
             GlobalApp = Win32LoadAppCode(SourceAppCodeDLLFullPath, TempAppCodeDLLFullPath, AppCodeLockFullPath);
             
@@ -651,7 +655,7 @@ WinMain(HINSTANCE Instance,
                 GlobalApp.CreateControls(&PlatformAPI);
             }
             
-            Win32SizeControls(Win32State.Controls);
+            Win32SizeControls(Win32State.SentinalControl.Children);
             
         }
         

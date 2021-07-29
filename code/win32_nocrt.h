@@ -86,7 +86,7 @@ struct win32_state
     HINSTANCE Instance;
     HWND WindowHwnd;
     
-    control *Controls;
+    control SentinalControl;
     control *FirstFreeControl;
 };
 
