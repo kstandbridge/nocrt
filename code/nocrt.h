@@ -4,7 +4,6 @@
 
 - Size/Positioning
 / - Min and Max
-/ - Fixed sizes
 / - Percentage
 */
 

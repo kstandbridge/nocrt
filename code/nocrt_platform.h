@@ -107,6 +107,7 @@ enum control_layout
     ControlLayout_Verticle,
 };
 typedef void set_control_layout(s64 ControlId, control_layout ControlLayout);
+typedef void set_control_size(s64 ControlId, r32 Size);
 struct platform_api
 {
     create_control *CreateControl;
@@ -114,6 +115,7 @@ struct platform_api
     get_control_text *GetControlText;
     set_control_text *SetControlText;
     set_control_layout *SetControlLayout;
+    set_control_size *SetControlSize;
 };
 
 typedef void create_controls(platform_api *PlatformAPI);

@@ -21,9 +21,14 @@ CreateControls(platform_api *PlatformAPI)
     Platform->SetControlLayout(ID_MAIN, ControlLayout_Verticle);
     
     Platform->CreateControl(ID_MAIN, ID_TOP_PANEL, ControlType_Static, "TOP HERE");
+    Platform->SetControlSize(ID_TOP_PANEL, 24.0f);
+    
+    
     Platform->CreateControl(ID_TOP_PANEL, ID_TOP_STATIC, ControlType_Static, "LEFT Input:");
+    Platform->SetControlSize(ID_TOP_STATIC, 64.0f);
     Platform->CreateControl(ID_TOP_PANEL, ID_TOP_EDIT, ControlType_Edit, "MIDDLE some text");
     Platform->CreateControl(ID_TOP_PANEL, ID_TOP_BUTTON, ControlType_Button, "RIGHT Submit");
+    Platform->SetControlSize(ID_TOP_BUTTON, 80.0f);
     
     Platform->CreateControl(ID_MAIN, ID_BOTTOM_PANEL, ControlType_Static, "BOTTOM HERE");
 }
@@ -36,7 +41,7 @@ HandleCommand(s64 Id)
         
         char Buffer[128];
         Platform->GetControlText(ID_TOP_EDIT, Buffer, sizeof(Buffer));
-        Platform->SetControlText(ID_TOP_STATIC, Buffer);
+        Platform->SetControlText(ID_BOTTOM_PANEL, Buffer);
         
     }
 }

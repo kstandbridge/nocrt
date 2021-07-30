@@ -63,6 +63,7 @@ struct control
     s64 ParentId;
     HWND ParentHwnd;
     
+    r32 Size;
     control_type Type;
     control_layout Layout;
     
