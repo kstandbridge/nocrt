@@ -21,9 +21,9 @@ CreateControls(platform_api *PlatformAPI)
     Platform->SetControlLayout(ID_MAIN, ControlLayout_Verticle);
     
     Platform->CreateControl(ID_MAIN, ID_TOP_PANEL, ControlType_Static, "TOP HERE");
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_BUTTON, ControlType_Button, "Submit");
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_EDIT, ControlType_Edit, "something foo");
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_STATIC, ControlType_Static, "Input:");
+    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_STATIC, ControlType_Static, "LEFT Input:");
+    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_EDIT, ControlType_Edit, "MIDDLE some text");
+    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_BUTTON, ControlType_Button, "RIGHT Submit");
     
     Platform->CreateControl(ID_MAIN, ID_BOTTOM_PANEL, ControlType_Static, "BOTTOM HERE");
 }

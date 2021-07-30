@@ -7,7 +7,6 @@
 / - Min and Max
 / - Fixed sizes
 / - Percentage
-- Add controls to end of linked list, as they appear in reverse order
 */
 
 #include "nocrt_platform.h"

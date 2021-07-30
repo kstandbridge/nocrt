@@ -198,15 +198,17 @@ Win32SizeControls_(control *Controls)
             Control;
             Control = Control->NextControl)
         {
-            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, FALSE);
+            --ControlCount;
             if(IsVerticleLayout)
             {
-                Y+= Height;
+                Y = Rect.top + Height*ControlCount;
             }
             else
             {
-                X += Width;
+                X = Rect.left + Width*ControlCount;
             }
+            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, FALSE);
+            
             if(Control->Children)
             {
                 Win32SizeControls_(Control->Children);
