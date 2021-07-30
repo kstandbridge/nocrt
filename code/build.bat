@@ -20,7 +20,12 @@ set LastError=%ERRORLEVEL%
 del lock.tmp
 
 REM Platform
-cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c -Fmwin32_nocrt.map /link /NODEFAULTLIB /SUBSYSTEM:windows %CommonLinkerFlags%
+rc -nologo ..\nocrt\code\win32_resource.rc
+cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /NODEFAULTLIB /SUBSYSTEM:windows %CommonLinkerFlags%
+
+REM Cleanup
+del *.obj
+del ..\nocrt\code\win32_resource.res
 
 popd
 
