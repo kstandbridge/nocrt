@@ -112,75 +112,6 @@ Win32DestroyControls(control *Controls)
     Win32State.SentinalControl.Children = 0;
 }
 
-internal void
-Win32SizeControls_(control *Controls)
-{
-    // NOTE(kstandbridge): Get control count
-    s32 ControlCount = 0;
-    HWND ParentHwnd = 0;
-    for(control *Control = Controls;
-        Control;
-        Control = Control->NextControl)
-    {
-        Assert((ParentHwnd == 0) || (ParentHwnd == Control->ParentHwnd));
-        ParentHwnd = Control->ParentHwnd;
-        
-        ++ControlCount;
-    }
-    
-    if(ControlCount > 0)
-    {
-        RECT Rect = {};
-        Win32.GetClientRect(ParentHwnd, &Rect);
-        if(ParentHwnd != Win32State.WindowHwnd)
-        {
-            HWND GrandParentHwnd = Win32.GetParent(ParentHwnd);
-            Assert(GrandParentHwnd);
-            Win32.MapWindowPoints(ParentHwnd, GrandParentHwnd, (POINT *)&Rect, 2);
-        }
-        s32 X = Rect.left;
-        s32 Y = Rect.top;
-        s32 Width = (Rect.right - Rect.left)/ControlCount;
-        s32 Height = Rect.bottom - Rect.top;
-        for(control *Control = Controls;
-            Control;
-            Control = Control->NextControl)
-        {
-            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, FALSE);
-            X += Width;
-            if(Control->Children)
-            {
-                Win32SizeControls_(Control->Children);
-            }
-        }
-    }
-}
-
-internal void
-Win32SizeControls(control *Controls)
-{
-    Win32SizeControls_(Controls);
-    RECT ClientRect;
-    Win32.GetClientRect(Win32State.WindowHwnd, &ClientRect);
-    Win32.InvalidateRect(Win32State.WindowHwnd, &ClientRect, TRUE);
-}
-
-// TODO(kstandbridge): SizeControls
-/*
-sizecontrolsraw(control* controls, s32 controlCount)
-foreach control in controls
-- rect = getclientrect(control.parenthwnd)
-- w = rect.w / control.childcount
-- h = rect.h
-- foreach child in control.children
-- - movewindow(child.hwnd, x, y, w, h)
-- - if(child.childcount > 0)
-- - - sizecontrolsraw(child.children) // recursion
-*/
-
-
-
-
 internal control *
 GetControlById(control *Controls, s64 ControlId)
 {
@@ -206,6 +137,91 @@ GetControlById(control *Controls, s64 ControlId)
     }
     
     return(Result);
+}
+
+internal void
+Win32SizeControls_(control *Controls)
+{
+    // NOTE(kstandbridge): Get control count
+    s32 ControlCount = 0;
+    HWND ParentHwnd = 0;
+    control *ParentControl = 0;
+    for(control *Control = Controls;
+        Control;
+        Control = Control->NextControl)
+    {
+        Assert((ParentHwnd == 0) || (ParentHwnd == Control->ParentHwnd));
+        ParentHwnd = Control->ParentHwnd;
+        if(Control->ParentId != ID_WINDOW)
+        {            
+            if(!ParentControl)
+            {
+                ParentControl = GetControlById(Win32State.SentinalControl.Children, Control->ParentId);
+                Assert(ParentControl);
+            }
+        }
+        
+        ++ControlCount;
+    }
+    
+    if(ControlCount > 0)
+    {
+        RECT Rect = {};
+        Win32.GetClientRect(ParentHwnd, &Rect);
+        if(ParentHwnd != Win32State.WindowHwnd)
+        {
+            HWND GrandParentHwnd = Win32.GetParent(ParentHwnd);
+            Assert(GrandParentHwnd);
+            Win32.MapWindowPoints(ParentHwnd, GrandParentHwnd, (POINT *)&Rect, 2);
+        }
+        
+        s32 X = Rect.left;
+        s32 Y = Rect.top;
+        
+        
+        s32 Width;
+        s32 Height;
+        
+        b32 IsVerticleLayout = (ParentControl && ParentControl->Layout == ControlLayout_Verticle);
+        if(IsVerticleLayout)
+        {
+            Width = Rect.right - Rect.left;
+            Height = (Rect.bottom - Rect.top)/ControlCount;
+        }
+        else
+        {
+            Width = (Rect.right - Rect.left)/ControlCount;
+            Height = Rect.bottom - Rect.top;
+        }
+        
+        for(control *Control = Controls;
+            Control;
+            Control = Control->NextControl)
+        {
+            Win32.MoveWindow(Control->Hwnd, X, Y, Width, Height, FALSE);
+            if(IsVerticleLayout)
+            {
+                Y+= Height;
+            }
+            else
+            {
+                X += Width;
+            }
+            if(Control->Children)
+            {
+                Win32SizeControls_(Control->Children);
+            }
+        }
+    }
+}
+
+internal void
+Win32SizeControls(control *Controls)
+{
+    Win32SizeControls_(Controls);
+    RECT ClientRect;
+    Win32.GetClientRect(Win32State.WindowHwnd, &ClientRect);
+    Win32.InvalidateRect(Win32State.WindowHwnd, &ClientRect, TRUE);
 }
 
 internal void
@@ -276,6 +292,7 @@ CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
     
     Control->Id = Id;
     Control->Type = Type;
+    Control->Layout = ControlLayout_Horizontal;
     
     switch(Type)
     {
@@ -356,12 +373,22 @@ SetControlText(s64 ControlId, char *Buffer)
 }
 
 internal void
+SetControlLayout(s64 ControlId, control_layout ControlLayout)
+{
+    Assert(Win32State.SentinalControl.Children);
+    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
+    Assert(Control);
+    Control->Layout = ControlLayout;
+}
+
+internal void
 Win32InitPlatformAPI(platform_api *PlatformAPI)
 {
     PlatformAPI->CreateControl = CreateControl;
     PlatformAPI->DisplayMessage = DisplayMessage;
     PlatformAPI->GetControlText = GetControlText;
     PlatformAPI->SetControlText = SetControlText;
+    PlatformAPI->SetControlLayout = SetControlLayout;
 }
 
 internal LRESULT CALLBACK

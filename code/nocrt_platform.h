@@ -102,13 +102,19 @@ typedef void create_control(s64 ParentId, s64 ControlId, control_type Type, char
 typedef void display_message(char *Title, char *Message);
 typedef void get_control_text(s64 ControlId, char *Buffer, s32 BufferSize);
 typedef void set_control_text(s64 ControlId, char *Buffer);
+enum control_layout
+{
+    ControlLayout_Horizontal,
+    ControlLayout_Verticle,
+};
+typedef void set_control_layout(s64 ControlId, control_layout ControlLayout);
 struct platform_api
 {
     create_control *CreateControl;
     display_message *DisplayMessage;
     get_control_text *GetControlText;
     set_control_text *SetControlText;
-    
+    set_control_layout *SetControlLayout;
 };
 
 typedef void create_controls(platform_api *PlatformAPI);

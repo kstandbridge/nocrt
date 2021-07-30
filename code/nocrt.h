@@ -4,7 +4,6 @@
 /* TODO(kstandbridge): 
 
 - Size/Positioning
-/ - Horizontal/Verticle
 / - Min and Max
 / - Fixed sizes
 / - Percentage

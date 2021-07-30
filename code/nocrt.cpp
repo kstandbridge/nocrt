@@ -18,6 +18,7 @@ CreateControls(platform_api *PlatformAPI)
     Platform = PlatformAPI;
     
     Platform->CreateControl(ID_WINDOW, ID_MAIN, ControlType_Static, "");
+    Platform->SetControlLayout(ID_MAIN, ControlLayout_Verticle);
     
     Platform->CreateControl(ID_MAIN, ID_TOP_PANEL, ControlType_Static, "TOP HERE");
     Platform->CreateControl(ID_TOP_PANEL, ID_TOP_BUTTON, ControlType_Button, "Submit");

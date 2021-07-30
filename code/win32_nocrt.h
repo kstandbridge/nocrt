@@ -65,6 +65,7 @@ struct control
     HWND ParentHwnd;
     
     control_type Type;
+    control_layout Layout;
     
     control *Children;
     
