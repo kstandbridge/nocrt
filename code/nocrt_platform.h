@@ -1,5 +1,4 @@
 #ifndef NOCRT_PLATFORM_H
-#define NOCRT_PLATFORM_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -119,6 +118,8 @@ struct platform_api
 
 typedef void create_controls(platform_api *PlatformAPI);
 typedef void handle_command(s64 Id);
-#endif //NOCRT_PLATFORM_H
 
 #define ID_WINDOW 0
+
+#define NOCRT_PLATFORM_H
+#endif //NOCRT_PLATFORM_H

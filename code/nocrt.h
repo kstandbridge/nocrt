@@ -1,5 +1,4 @@
 #ifndef NOCRT_H
-#define NOCRT_H
 
 /* TODO(kstandbridge): 
 
@@ -15,4 +14,5 @@
 
 // NOTE(kstandbridge): dll only types
 
+#define NOCRT_H
 #endif //NOCRT_H

@@ -1,5 +1,4 @@
 #ifndef WIN32_NOCRT_H
-#define WIN32_NOCRT_H
 
 typedef HWND create_window_ex_a(DWORD dwExStyle, LPCSTR lpClassName, LPCSTR lpWindowName, DWORD dwStyle, int X, int Y, int nWidth, int nHeight, HWND hWndParent, HMENU hMenu, HINSTANCE hInstance, LPVOID lpParam);
 typedef LRESULT def_window_proc_a(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -91,5 +90,5 @@ struct win32_state
     control *FirstFreeControl;
 };
 
-
+#define WIN32_NOCRT_H
 #endif //WIN32_NOCRT_H

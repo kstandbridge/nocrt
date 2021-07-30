@@ -41,8 +41,3 @@ HandleCommand(s64 Id)
     }
 }
 
-
-void __stdcall
-_DllMainCRTStartup()
-{
-}
