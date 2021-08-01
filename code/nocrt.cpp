@@ -2,12 +2,15 @@
 // TODO(kstandbridge): cpp files here
 
 
-#define ID_MAIN 1000
-#define ID_TOP_PANEL 1100
-#define ID_TOP_STATIC 1101
-#define ID_TOP_EDIT 1102
-#define ID_TOP_BUTTON 1103
-#define ID_BOTTOM_PANEL 1200
+#define ID_MAIN            1000
+
+#define ID_TOP_PANEL       1100
+#define ID_TOP_LEFT_SPACER 1101
+#define ID_TOP_STATIC      1102
+#define ID_TOP_EDIT        1103
+#define ID_TOP_BUTTON      1104
+
+#define ID_BOTTOM_PANEL    1200
 
 global_variable platform_api *Platform;
 
@@ -17,20 +20,25 @@ CreateControls(platform_api *PlatformAPI)
     Assert(PlatformAPI);
     Platform = PlatformAPI;
     
-    Platform->CreateControl(ID_WINDOW, ID_MAIN, ControlType_Static, "");
-    Platform->SetControlLayout(ID_MAIN, ControlLayout_Verticle);
+    Platform->AddPanel(ID_WINDOW, ID_MAIN, ControlLayout_Verticle);
     
-    Platform->CreateControl(ID_MAIN, ID_TOP_PANEL, ControlType_Static, "TOP HERE");
-    Platform->SetControlSize(ID_TOP_PANEL, 24.0f);
+    // NOTE(kstandbridge): Top bar
+    Platform->AddPanel(ID_MAIN, ID_TOP_PANEL, ControlLayout_Horizontal);
+    Platform->AddSpacer(ID_TOP_PANEL, SIZE_FILL);
+    Platform->AddStatic(ID_TOP_PANEL, ID_TOP_STATIC, "Input:", 80.0f);
+    Platform->AddEdit(ID_TOP_PANEL, ID_TOP_EDIT, "<enter here>", SIZE_FILL);
+    Platform->AddButton(ID_TOP_PANEL, ID_TOP_BUTTON, "Submit", 80.0f);
+    Platform->AddSpacer(ID_TOP_PANEL, SIZE_FILL);
     
+    // NOTE(kstandbridge): Bottom fill
+    Platform->AddPanel(ID_MAIN, ID_BOTTOM_PANEL, ControlLayout_Horizontal);
+    /*
+    Platform->AddListView(ID_BOTTOM_PANEL, ID_WORLD_LIST, SIZE_FILL);
+    Platform->AddListViewColumn(ID_WORLD_LIST, "Date");
+    Platform->AddListViewColumn(ID_WORLD_LIST, "Name");
+    */
+    //Platform->AddListViewProgressColumn(ID_WORLD_LIST, "Status");
     
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_STATIC, ControlType_Static, "LEFT Input:");
-    Platform->SetControlSize(ID_TOP_STATIC, 64.0f);
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_EDIT, ControlType_Edit, "MIDDLE some text");
-    Platform->CreateControl(ID_TOP_PANEL, ID_TOP_BUTTON, ControlType_Button, "RIGHT Submit");
-    Platform->SetControlSize(ID_TOP_BUTTON, 80.0f);
-    
-    Platform->CreateControl(ID_MAIN, ID_BOTTOM_PANEL, ControlType_Static, "BOTTOM HERE");
 }
 
 void
@@ -38,11 +46,27 @@ HandleCommand(s64 Id)
 {
     if(Id == ID_TOP_BUTTON)
     {
-        
         char Buffer[128];
         Platform->GetControlText(ID_TOP_EDIT, Buffer, sizeof(Buffer));
         Platform->SetControlText(ID_BOTTOM_PANEL, Buffer);
         
     }
 }
-
+//
+//void
+//GetListViewData(s64 ControlId, s32 Column, s32 Row, char *OutputBuffer)
+//{
+//Output = "Foo bar";
+//}
+//
+//
+//r32
+//GetListViewProgressData(s64 ControlId, s32 Column, s32 Row, char *OutputBuffer)
+//{
+//r32 Result = 0.75f;
+//
+//Output = "Downloading... (75%)";
+//
+//return(Result);
+//}
+//

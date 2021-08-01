@@ -54,9 +54,21 @@ struct win32_app_code
     handle_command *HandleCommand;
 };
 
+enum control_type
+{
+    ControlType_Button,
+    ControlType_Edit,
+    ControlType_Panel,
+    ControlType_Static,
+    ControlType_Spacer
+};
+
 #define MAX_CHILDREN 8
 struct control
 {
+    // TODO(kstandbridge): Type checking not in release build6,
+    control_type Type;
+    
     s64 Id;
     HWND Hwnd;
     
@@ -64,7 +76,6 @@ struct control
     HWND ParentHwnd;
     
     r32 Size;
-    control_type Type;
     control_layout Layout;
     
     control *Children;

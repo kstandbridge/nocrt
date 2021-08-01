@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include "win32_resource.h"
 #include "win32_nocrt.h"
 
 global_variable win_32 Win32;
@@ -162,10 +163,13 @@ Win32SizeControls_(control *Controls)
                 Assert(ParentControl);
             }
         }
-        TotalSize += Control->Size;
-        if(Control->Size == 0.0f)
+        if(Control->Size == SIZE_FILL)
         {
             ++ControlWithoutSize;
+        }
+        else
+        {
+            TotalSize += Control->Size;
         }
         ++ControlCount;
     }
@@ -209,7 +213,7 @@ Win32SizeControls_(control *Controls)
             --ControlCount;
             if(IsVerticleLayout)
             {
-                s32 CalcHeight = (s32)(Control->Size ? Control->Size : Height);
+                s32 CalcHeight = (s32)((Control->Size != SIZE_FILL) ? Control->Size : Height);
                 Y -= CalcHeight;
                 Win32.MoveWindow(Control->Hwnd, (s32)X, (s32)Y, 
                                  (s32)Width, 
@@ -219,7 +223,7 @@ Win32SizeControls_(control *Controls)
             }
             else
             {
-                s32 CalcWidth = (s32)(Control->Size ? Control->Size : Width);
+                s32 CalcWidth = (s32)((Control->Size != SIZE_FILL) ? Control->Size : Width);
                 X -= CalcWidth;
                 Win32.MoveWindow(Control->Hwnd, (s32)X, (s32)Y, 
                                  CalcWidth,
@@ -244,10 +248,10 @@ Win32SizeControls(control *Controls)
     Win32.InvalidateRect(Win32State.WindowHwnd, &ClientRect, TRUE);
 }
 
-internal void
-CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
+inline control*
+CreateControl_(s64 ParentId, s64 ControlId, r32 Size, control_type Type)
 {
-    control *Control = 0;
+    control *Result = 0;
     
     if(ParentId == ID_WINDOW)
     {
@@ -260,23 +264,23 @@ CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
             FreeControl->NextControl = Win32State.SentinalControl.Children;
             Win32State.SentinalControl.Children = FreeControl;
             
-            Control = FreeControl;
+            Result = FreeControl;
         }
         else
         {
-            Control = Win32State.SentinalControl.Children;
-            while(Control != 0)
+            Result= Win32State.SentinalControl.Children;
+            while(Result != 0)
             {
-                Control = Control->NextControl;
+                Result = Result->NextControl;
             }
-            Control = PushStruct(&Win32State.Arena, control);
-            Control->NextControl = Win32State.SentinalControl.Children;
-            Win32State.SentinalControl.Children = Control;
+            Result = PushStruct(&Win32State.Arena, control);
+            Result->NextControl = Win32State.SentinalControl.Children;
+            Win32State.SentinalControl.Children = Result;
         }
         
-        Assert(Control);
-        Control->ParentId = ID_WINDOW;
-        Control->ParentHwnd = Win32State.WindowHwnd;
+        Assert(Result);
+        Result->ParentId = ID_WINDOW;
+        Result->ParentHwnd = Win32State.WindowHwnd;
     }
     else
     {
@@ -291,84 +295,136 @@ CreateControl(s64 ParentId, s64 Id, control_type Type, char *Text)
             Win32State.FirstFreeControl = FreeControl->NextControl;
             FreeControl->NextControl = ParentControl->Children;
             ParentControl->Children = FreeControl;
-            Control = FreeControl;
+            Result = FreeControl;
         }
         else
         {
-            Control = ParentControl->Children;
-            while(Control != 0)
+            Result = ParentControl->Children;
+            while(Result != 0)
             {
-                Control = Control->NextControl;
+                Result= Result->NextControl;
             }
-            Control = PushStruct(&Win32State.Arena, control);
-            Control->NextControl = ParentControl->Children;
-            ParentControl->Children = Control;
+            Result= PushStruct(&Win32State.Arena, control);
+            Result->NextControl = ParentControl->Children;
+            ParentControl->Children = Result;
         }
         
-        Assert(Control);
-        Control->ParentId = ParentControl->Id;
-        Control->ParentHwnd = ParentControl->Hwnd;
+        Assert(Result);
+        Result->ParentId = ParentControl->Id;
+        Result->ParentHwnd = ParentControl->Hwnd;
     }
     
-    Control->Id = Id;
-    Control->Type = Type;
-    Control->Layout = ControlLayout_Horizontal;
-    Control->Size = 0.0f;
+    Result->Id = ControlId;
+    Result->Type = Type;
+    Result->Size = Size;
+    Result->Layout = ControlLayout_Horizontal;
     
-    switch(Type)
-    {
-        
-        case ControlType_Static:
-        {
-            Control->Hwnd = Win32.CreateWindowExA(0,
-                                                  "STATIC",
-                                                  Text,
-                                                  WS_VISIBLE|WS_CHILD,
-                                                  10, 10,
-                                                  100, 100,
-                                                  Win32State.WindowHwnd, 
-                                                  (HMENU)Control->Id, 
-                                                  Win32State.Instance, 
-                                                  0);
-        } break;
-        
-        case ControlType_Edit:
-        {
-            Control->Hwnd = Win32.CreateWindowExA(0,
-                                                  "EDIT",
-                                                  Text,
-                                                  WS_VISIBLE|WS_CHILD,
-                                                  210, 10,
-                                                  100, 100,
-                                                  Win32State.WindowHwnd, 
-                                                  (HMENU)Control->Id, 
-                                                  Win32State.Instance, 
-                                                  0);
-        } break;
-        
-        case ControlType_Button:
-        {
-            Control->Hwnd = Win32.CreateWindowExA(0,
-                                                  "BUTTON",
-                                                  Text,
-                                                  WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,
-                                                  410, 10,
-                                                  100, 100,
-                                                  Win32State.WindowHwnd, 
-                                                  (HMENU)Control->Id, 
-                                                  Win32State.Instance, 
-                                                  0);
-        } break;
-        
-        default:
-        {
-            InvalidCodePath;
-        } break;
-    }
+    return(Result);
+}
+
+inline void
+SetDefaultFont(HWND Hwnd)
+{
+    Win32.SendMessageA(Hwnd, WM_SETFONT, (LPARAM)Win32.GetStockObject(DEFAULT_GUI_FONT), TRUE);
+}
+
+internal void
+AddButton(s64 ParentId, s64 ControlId, char *Text, r32 Size)
+{
+    control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_Button);
     
-    Win32.SendMessageA(Control->Hwnd, WM_SETFONT, (LPARAM)Win32.GetStockObject(DEFAULT_GUI_FONT), TRUE);
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          "BUTTON",
+                                          Text,
+                                          WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
     
     Assert(Control->Hwnd);
+    SetDefaultFont(Control->Hwnd);
+}
+
+internal void
+AddEdit(s64 ParentId, s64 ControlId, char *Text, r32 Size)
+{
+    control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_Edit);
+    
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          "EDIT",
+                                          Text,
+                                          WS_VISIBLE|WS_CHILD,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
+    
+    Assert(Control->Hwnd);
+    SetDefaultFont(Control->Hwnd);
+}
+
+internal void
+AddPanel(s64 ParentId, s64 ControlId, control_layout Layout)
+{
+    control *Control = CreateControl_(ParentId, ControlId, SIZE_FILL, ControlType_Panel);
+    Control->Layout = Layout;
+    
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          "STATIC",
+                                          "",
+                                          WS_VISIBLE|WS_CHILD,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
+    
+    Assert(Control->Hwnd);
+}
+
+internal void
+AddSpacer(s64 ParentId, r32 Size)
+{
+    control *Control = CreateControl_(ParentId, IDC_STATIC, Size, ControlType_Spacer);
+    
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          "STATIC",
+                                          "",
+                                          WS_VISIBLE|WS_CHILD,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
+    
+    Assert(Control->Hwnd);
+}
+
+internal void
+AddStatic(s64 ParentId, s64 ControlId, char *Text, r32 Size)
+{
+    control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_Static);
+    
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          "STATIC",
+                                          Text,
+                                          WS_VISIBLE|WS_CHILD,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
+    
+    Assert(Control->Hwnd);
+    SetDefaultFont(Control->Hwnd);
 }
 
 internal void
@@ -394,32 +450,18 @@ SetControlText(s64 ControlId, char *Buffer)
 }
 
 internal void
-SetControlLayout(s64 ControlId, control_layout ControlLayout)
-{
-    Assert(Win32State.SentinalControl.Children);
-    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
-    Assert(Control);
-    Control->Layout = ControlLayout;
-}
-
-internal void
-SetControlSize(s64 ControlId, r32 Size)
-{
-    Assert(Win32State.SentinalControl.Children);
-    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
-    Assert(Control);
-    Control->Size = Size;
-}
-
-internal void
 Win32InitPlatformAPI(platform_api *PlatformAPI)
 {
-    PlatformAPI->CreateControl = CreateControl;
+    PlatformAPI->AddButton = AddButton;
+    PlatformAPI->AddEdit = AddEdit;
+    PlatformAPI->AddPanel = AddPanel;
+    PlatformAPI->AddSpacer = AddSpacer;
+    PlatformAPI->AddStatic = AddStatic;
+    
     PlatformAPI->DisplayMessage = DisplayMessage;
     PlatformAPI->GetControlText = GetControlText;
     PlatformAPI->SetControlText = SetControlText;
-    PlatformAPI->SetControlLayout = SetControlLayout;
-    PlatformAPI->SetControlSize = SetControlSize;
+    
 }
 
 internal LRESULT CALLBACK

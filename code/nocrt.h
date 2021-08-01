@@ -2,6 +2,13 @@
 
 /* TODO(kstandbridge): 
 
+ - ListView control
+ / - List view columns
+/ - List view get data for row/column
+/ - List view column progress bar
+- Splitter with drag/drop to resize panels
+- Menus
+- Status bar
 - Size/Positioning
 / - Min and Max
 / - Percentage

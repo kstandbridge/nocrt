@@ -90,38 +90,43 @@ ZeroSize(memory_index Size, void *Ptr)
         *Byte++ = 0;
     }
 }
-
-enum control_type
-{
-    ControlType_Button,
-    ControlType_Edit,
-    ControlType_Static,
-};
-typedef void create_control(s64 ParentId, s64 ControlId, control_type Type, char *Text);
-typedef void display_message(char *Title, char *Message);
-typedef void get_control_text(s64 ControlId, char *Buffer, s32 BufferSize);
-typedef void set_control_text(s64 ControlId, char *Buffer);
 enum control_layout
 {
     ControlLayout_Horizontal,
     ControlLayout_Verticle,
 };
-typedef void set_control_layout(s64 ControlId, control_layout ControlLayout);
-typedef void set_control_size(s64 ControlId, r32 Size);
+typedef void add_button(s64 ParentId, s64 ControlId, char *Text, r32 Size);
+typedef void add_edit(s64 ParentId, s64 ControlId, char *Text, r32 Size);
+typedef void add_panel(s64 ParentId, s64 ControlId, control_layout Layout);
+typedef void add_spacer(s64 ParentId, r32 Size);
+typedef void add_static(s64 ParentId, s64 ControlId, char *Text, r32 Size);
+
+
+
+// NOTE(kstandbridge): Platform API
+typedef void display_message(char *Title, char *Message);
+typedef void get_control_text(s64 ControlId, char *Buffer, s32 BufferSize);
+typedef void set_control_text(s64 ControlId, char *Buffer);
+
 struct platform_api
 {
-    create_control *CreateControl;
+    add_button *AddButton;
+    add_edit *AddEdit;
+    add_panel *AddPanel;
+    add_spacer *AddSpacer;
+    add_static *AddStatic;
+    
     display_message *DisplayMessage;
     get_control_text *GetControlText;
     set_control_text *SetControlText;
-    set_control_layout *SetControlLayout;
-    set_control_size *SetControlSize;
 };
 
+// NOTE(kstandbridge): App API
 typedef void create_controls(platform_api *PlatformAPI);
 typedef void handle_command(s64 Id);
 
 #define ID_WINDOW 0
+#define SIZE_FILL 10000.0f
 
 #define NOCRT_PLATFORM_H
-#endif //NOCRT_PLATFORM_H
+#endif //NOCRT_PLATFORM_H6
