@@ -97,12 +97,15 @@ enum control_layout
 };
 typedef void add_button(s64 ParentId, s64 ControlId, char *Text, r32 Size);
 typedef void add_edit(s64 ParentId, s64 ControlId, char *Text, r32 Size);
+typedef void add_list_view(s64 ParentId, s64 ControlId, r32 Size);
+typedef void add_list_view_column(s64 ControlId, s32 Index, char *Text);
 typedef void add_group_box(s64 ParentId, s64 ControlId, char *Text, control_layout Layout);
 typedef void add_panel(s64 ParentId, s64 ControlId, control_layout Layout);
 typedef void add_spacer(s64 ParentId, r32 Size);
 typedef void add_static(s64 ParentId, s64 ControlId, char *Text, r32 Size);
 
 typedef void set_control_margin(s64 ControlId, r32 Top, r32 Left, r32 Right, r32 Bottom);
+typedef void set_list_view_item_count(s64 ControlId, s32 Count);
 
 
 // NOTE(kstandbridge): Platform API
@@ -114,13 +117,15 @@ struct platform_api
 {
     add_button *AddButton;
     add_edit *AddEdit;
+    add_list_view *AddListView;
+    add_list_view_column *AddListViewColumn;
     add_group_box *AddGroupBox;
     add_panel *AddPanel;
     add_spacer *AddSpacer;
     add_static *AddStatic;
     
     set_control_margin *SetControlMargin;
-    
+    set_list_view_item_count *SetListViewItemCount;
     
     display_message *DisplayMessage;
     get_control_text *GetControlText;

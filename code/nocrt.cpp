@@ -15,7 +15,7 @@
 
 #define ID_BUTTON_ONE      9001
 #define ID_GROUP_MID       9002
-#define ID_BUTTON_TWO      9003
+#define ID_LIST_BOTTOM     9003
 
 #define ID_BUTTON_THREE    9013
 #define ID_BUTTON_FOUR     9014
@@ -45,7 +45,10 @@ CreateControls(platform_api *PlatformAPI)
     
     Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_ONE, "ONE", SIZE_FILL);
     Platform->AddGroupBox(ID_BOTTOM_GROUP, ID_GROUP_MID, "MIDDLE", ControlLayout_Horizontal);
-    Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_TWO, "TWO", SIZE_FILL);
+    Platform->AddListView(ID_BOTTOM_GROUP, ID_LIST_BOTTOM, SIZE_FILL);
+    Platform->AddListViewColumn(ID_LIST_BOTTOM, 0, "Date");
+    Platform->AddListViewColumn(ID_LIST_BOTTOM, 0, "Name");
+    Platform->SetListViewItemCount(ID_LIST_BOTTOM, 3);
     
     Platform->AddButton(ID_GROUP_MID, ID_BUTTON_THREE, "THREE", SIZE_FILL);
     Platform->AddButton(ID_GROUP_MID, ID_BUTTON_FOUR, "FOUR", SIZE_FILL);

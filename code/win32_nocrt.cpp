@@ -1,6 +1,7 @@
 #include "nocrt_platform.h"
 
 #include <windows.h>
+#include <CommCtrl.h>
 
 #include "win32_resource.h"
 #include "win32_nocrt.h"
@@ -367,7 +368,7 @@ AddButton(s64 ParentId, s64 ControlId, char *Text, r32 Size)
     control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_Button);
     
     Control->Hwnd = Win32.CreateWindowExA(0,
-                                          "BUTTON",
+                                          WC_BUTTON,
                                           Text,
                                           WS_VISIBLE|WS_CHILD|BS_PUSHBUTTON,
                                           10, 10,
@@ -387,7 +388,7 @@ AddEdit(s64 ParentId, s64 ControlId, char *Text, r32 Size)
     control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_Edit);
     
     Control->Hwnd = Win32.CreateWindowExA(0,
-                                          "EDIT",
+                                          WC_EDIT,
                                           Text,
                                           WS_VISIBLE|WS_CHILD,
                                           10, 10,
@@ -402,13 +403,51 @@ AddEdit(s64 ParentId, s64 ControlId, char *Text, r32 Size)
 }
 
 internal void
+AddListView(s64 ParentId, s64 ControlId, r32 Size)
+{
+    control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_ListView);
+    
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          WC_LISTVIEW,
+                                          "",
+                                          WS_VISIBLE|WS_CHILD|LVS_REPORT|LVS_OWNERDATA|LVS_SINGLESEL,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
+    
+    Assert(Control->Hwnd);
+    Win32.SendMessageA(Control->Hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP);
+    
+    // TODO(kstandbridge): Do I need to set font on listview?
+    //SetDefaultFont(Control->Hwnd);
+}
+
+internal void
+AddListViewColumn(s64 ControlId, s32 Index, char *Text)
+{
+    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
+    Assert(Control);
+    
+    LV_COLUMN Column = {0};
+    Column.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
+	Column.fmt = LVCFMT_LEFT;
+	Column.cx = 120;
+    
+	Column.pszText = Text;
+    Assert(-1 != Win32.SendMessageA(Control->Hwnd, LVM_INSERTCOLUMN, (WPARAM)Index, (LPARAM)&Column));
+}
+
+internal void
 AddPanel(s64 ParentId, s64 ControlId, control_layout Layout)
 {
     control *Control = CreateControl_(ParentId, ControlId, SIZE_FILL, ControlType_Panel);
     Control->Layout = Layout;
     
     Control->Hwnd = Win32.CreateWindowExA(0,
-                                          "STATIC",
+                                          WC_STATIC,
                                           "",
                                           WS_VISIBLE|WS_CHILD,
                                           10, 10,
@@ -424,7 +463,7 @@ AddPanel(s64 ParentId, s64 ControlId, control_layout Layout)
 internal void
 AddGroupBox(s64 ParentId, s64 ControlId, char *Text, control_layout Layout)
 {
-    control *Control = CreateControl_(ParentId, ControlId, SIZE_FILL, ControlType_Panel);
+    control *Control = CreateControl_(ParentId, ControlId, SIZE_FILL, ControlType_GroupBox);
     Control->Layout = Layout;
     
     Control->PaddingTop = 16.0f;
@@ -433,7 +472,7 @@ AddGroupBox(s64 ParentId, s64 ControlId, char *Text, control_layout Layout)
     Control->PaddingBottom = 8.0f;
     
     Control->Hwnd = Win32.CreateWindowExA(0,
-                                          "BUTTON",
+                                          WC_BUTTON,
                                           Text,
                                           WS_VISIBLE|WS_CHILD|BS_GROUPBOX,
                                           10, 10,
@@ -452,7 +491,7 @@ AddSpacer(s64 ParentId, r32 Size)
     control *Control = CreateControl_(ParentId, IDC_STATIC, Size, ControlType_Spacer);
     
     Control->Hwnd = Win32.CreateWindowExA(0,
-                                          "STATIC",
+                                          WC_STATIC,
                                           "",
                                           WS_VISIBLE|WS_CHILD,
                                           10, 10,
@@ -471,7 +510,7 @@ AddStatic(s64 ParentId, s64 ControlId, char *Text, r32 Size)
     control *Control = CreateControl_(ParentId, ControlId, Size, ControlType_Static);
     
     Control->Hwnd = Win32.CreateWindowExA(0,
-                                          "STATIC",
+                                          WC_STATIC,
                                           Text,
                                           WS_VISIBLE|WS_CHILD,
                                           10, 10,
@@ -485,8 +524,6 @@ AddStatic(s64 ParentId, s64 ControlId, char *Text, r32 Size)
     SetDefaultFont(Control->Hwnd);
 }
 
-
-
 internal void
 SetControlMargin(s64 ControlId, r32 Top, r32 Left, r32 Right, r32 Bottom)
 {
@@ -496,6 +533,15 @@ SetControlMargin(s64 ControlId, r32 Top, r32 Left, r32 Right, r32 Bottom)
     Control->MarginLeft = Left;
     Control->MarginRight = Right;
     Control->MarginBottom = Bottom;
+}
+
+internal void
+SetListViewItemCount(s64 ControlId, s32 Count)
+{
+    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
+    Assert(Control);
+    
+    Assert(Win32.SendMessageA(Control->Hwnd, LVM_SETITEMCOUNT, (WPARAM)Count, (LPARAM)0))
 }
 
 internal void
@@ -525,12 +571,15 @@ Win32InitPlatformAPI(platform_api *PlatformAPI)
 {
     PlatformAPI->AddButton = AddButton;
     PlatformAPI->AddEdit = AddEdit;
+    PlatformAPI->AddListView = AddListView;
+    PlatformAPI->AddListViewColumn = AddListViewColumn;
     PlatformAPI->AddPanel = AddPanel;
     PlatformAPI->AddGroupBox = AddGroupBox;
     PlatformAPI->AddSpacer = AddSpacer;
     PlatformAPI->AddStatic = AddStatic;
     
     PlatformAPI->SetControlMargin = SetControlMargin;
+    PlatformAPI->SetListViewItemCount = SetListViewItemCount;
     
     PlatformAPI->DisplayMessage = DisplayMessage;
     PlatformAPI->GetControlText = GetControlText;

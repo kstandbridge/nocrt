@@ -58,7 +58,9 @@ enum control_type
 {
     ControlType_Button,
     ControlType_Edit,
+    ControlType_ListView,
     ControlType_Panel,
+    ControlType_GroupBox,
     ControlType_Static,
     ControlType_Spacer
 };

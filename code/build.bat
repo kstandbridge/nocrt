@@ -15,14 +15,14 @@ del *.pdb > NUL 2> NUL
 echo WAITING FOR PDB > lock.tmp
 
 REM App
-cl %CommonCompilerFlags% -MTd -I..\iaca-win64\ ..\nocrt\code\nocrt.cpp ..\nocrt\code\nocrt_msvc.c -LD /link -incremental:no -opt:ref -PDB:nocrt_%random%.pdb -EXPORT:CreateControls -EXPORT:HandleCommand
+cl %CommonCompilerFlags% -MTd -I..\iaca-win64\ ..\nocrt\code\nocrt.cpp -LD /link -incremental:no -opt:ref -PDB:nocrt_%random%.pdb -EXPORT:CreateControls -EXPORT:HandleCommand
 set LastError=%ERRORLEVEL%
 del lock.tmp
 
 REM Platform
 rc -nologo ..\nocrt\code\win32_resource.rc
-cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /SUBSYSTEM:windows %CommonLinkerFlags%
-:: cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /NODEFAULTLIB /SUBSYSTEM:windows %CommonLinkerFlags%
+cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\win32_resource.res /link -incremental:no -opt:ref kernel32.lib
+::cl %CommonCompilerFlags% ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /NODEFAULTLIB /SUBSYSTEM:windows %CommonLinkerFlags%
 
 REM Cleanup
 del *.obj
