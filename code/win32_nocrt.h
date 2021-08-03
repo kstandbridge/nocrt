@@ -69,6 +69,16 @@ struct control
     // TODO(kstandbridge): Type checking not in release build6,
     control_type Type;
     
+    r32 PaddingTop;
+    r32 PaddingLeft;
+    r32 PaddingRight;
+    r32 PaddingBottom;
+    
+    r32 MarginTop;
+    r32 MarginLeft;
+    r32 MarginRight;
+    r32 MarginBottom;
+    
     s64 Id;
     HWND Hwnd;
     

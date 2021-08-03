@@ -2,9 +2,7 @@
 
 /* TODO(kstandbridge): 
 
-- Padding could be set during GetWindowRect
-- Margins could be set during GetWindowRect
- - ListView control
+- ListView control
  / - List view columns
 / - List view get data for row/column
 / - List view column progress bar

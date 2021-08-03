@@ -193,17 +193,38 @@ Win32SizeControls_(control *Controls)
         b32 IsVerticleLayout = (ParentControl && ParentControl->Layout == ControlLayout_Verticle);
         if(IsVerticleLayout)
         {
-            X = 0;
-            Y = (r32)Rect.bottom;
-            Width = (r32)Rect.right - (r32)Rect.left;
-            Height = ((r32)Rect.bottom - (r32)Rect.top - TotalSize)/ControlWithoutSize;
+            if(ParentControl)
+            {
+                X = (r32)Rect.left + ParentControl->PaddingLeft;
+                Y = (r32)Rect.bottom - ParentControl->PaddingBottom;
+                Width = (r32)Rect.right - (r32)Rect.left - ParentControl->PaddingRight - ParentControl->PaddingLeft;
+                Height = ((r32)Rect.bottom - ParentControl->PaddingBottom - (r32)Rect.top - TotalSize - ParentControl->PaddingTop)/ControlWithoutSize;
+            }
+            else
+            {
+                X = (r32)Rect.left;
+                Y = (r32)Rect.bottom;
+                Width = (r32)Rect.right - (r32)Rect.left;
+                Height = ((r32)Rect.bottom - (r32)Rect.top - TotalSize)/ControlWithoutSize;
+            }
         }
         else
         {
-            X = (r32)Rect.right;
-            Y = (r32)Rect.top;
-            Width = ((r32)Rect.right - (r32)Rect.left - TotalSize)/ControlWithoutSize;
-            Height = (r32)Rect.bottom - (r32)Rect.top;
+            if(ParentControl)
+            {                
+                X = (r32)Rect.right - ParentControl->PaddingRight;
+                Y = (r32)Rect.top + ParentControl->PaddingTop;
+                Width = ((r32)Rect.right - ParentControl->PaddingRight - (r32)Rect.left - TotalSize - ParentControl->PaddingLeft)/ControlWithoutSize;
+                Height = (r32)Rect.bottom - (r32)Rect.top - ParentControl->PaddingBottom - ParentControl->PaddingTop;
+            }
+            else
+            {                
+                X = (r32)Rect.right;
+                Y = (r32)Rect.top;
+                Width = ((r32)Rect.right - (r32)Rect.left - TotalSize)/ControlWithoutSize;
+                Height = (r32)Rect.bottom - (r32)Rect.top;
+            }
+            
         }
         
         for(control *Control = Controls;
@@ -213,21 +234,25 @@ Win32SizeControls_(control *Controls)
             --ControlCount;
             if(IsVerticleLayout)
             {
-                s32 CalcHeight = (s32)((Control->Size != SIZE_FILL) ? Control->Size : Height);
+                r32 CalcHeight = (Control->Size != SIZE_FILL) ? Control->Size : Height;
                 Y -= CalcHeight;
-                Win32.MoveWindow(Control->Hwnd, (s32)X, (s32)Y, 
-                                 (s32)Width, 
-                                 CalcHeight, 
+                Win32.MoveWindow(Control->Hwnd, 
+                                 (s32)(X + Control->MarginLeft), 
+                                 (s32)(Y + Control->MarginTop), 
+                                 (s32)(Width - Control->MarginLeft - Control->MarginRight), 
+                                 (s32)(CalcHeight - Control->MarginTop - Control->MarginBottom), 
                                  FALSE);
                 
             }
             else
             {
-                s32 CalcWidth = (s32)((Control->Size != SIZE_FILL) ? Control->Size : Width);
+                r32 CalcWidth = (Control->Size != SIZE_FILL) ? Control->Size : Width;
                 X -= CalcWidth;
-                Win32.MoveWindow(Control->Hwnd, (s32)X, (s32)Y, 
-                                 CalcWidth,
-                                 (s32)Height, 
+                Win32.MoveWindow(Control->Hwnd, 
+                                 (s32)(X + Control->MarginLeft), 
+                                 (s32)(Y + Control->MarginTop), 
+                                 (s32)(CalcWidth - Control->MarginLeft - Control->MarginRight),
+                                 (s32)(Height - Control->MarginTop - Control->MarginBottom), 
                                  FALSE);
             }
             
@@ -318,6 +343,14 @@ CreateControl_(s64 ParentId, s64 ControlId, r32 Size, control_type Type)
     Result->Type = Type;
     Result->Size = Size;
     Result->Layout = ControlLayout_Horizontal;
+    Result->PaddingTop = 0.0;
+    Result->PaddingLeft = 0.0;
+    Result->PaddingRight = 0.0;
+    Result->PaddingBottom = 0.0;
+    Result->MarginTop = 0.0;
+    Result->MarginLeft = 0.0;
+    Result->MarginRight = 0.0;
+    Result->MarginBottom = 0.0;
     
     return(Result);
 }
@@ -394,6 +427,11 @@ AddGroupBox(s64 ParentId, s64 ControlId, char *Text, control_layout Layout)
     control *Control = CreateControl_(ParentId, ControlId, SIZE_FILL, ControlType_Panel);
     Control->Layout = Layout;
     
+    Control->PaddingTop = 16.0f;
+    Control->PaddingLeft = 8.0f;
+    Control->PaddingRight = 8.0f;
+    Control->PaddingBottom = 8.0f;
+    
     Control->Hwnd = Win32.CreateWindowExA(0,
                                           "BUTTON",
                                           Text,
@@ -447,6 +485,19 @@ AddStatic(s64 ParentId, s64 ControlId, char *Text, r32 Size)
     SetDefaultFont(Control->Hwnd);
 }
 
+
+
+internal void
+SetControlMargin(s64 ControlId, r32 Top, r32 Left, r32 Right, r32 Bottom)
+{
+    control *Control = GetControlById(Win32State.SentinalControl.Children, ControlId);
+    Assert(Control);
+    Control->MarginTop = Top;
+    Control->MarginLeft = Left;
+    Control->MarginRight = Right;
+    Control->MarginBottom = Bottom;
+}
+
 internal void
 DisplayMessage(char *Title, char *Message)
 {
@@ -478,6 +529,8 @@ Win32InitPlatformAPI(platform_api *PlatformAPI)
     PlatformAPI->AddGroupBox = AddGroupBox;
     PlatformAPI->AddSpacer = AddSpacer;
     PlatformAPI->AddStatic = AddStatic;
+    
+    PlatformAPI->SetControlMargin = SetControlMargin;
     
     PlatformAPI->DisplayMessage = DisplayMessage;
     PlatformAPI->GetControlText = GetControlText;

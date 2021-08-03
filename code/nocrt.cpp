@@ -14,8 +14,13 @@
 
 
 #define ID_BUTTON_ONE      9001
-#define ID_BUTTON_TWO      9002
-#define ID_BUTTON_THREE    9003
+#define ID_GROUP_MID       9002
+#define ID_BUTTON_TWO      9003
+
+#define ID_BUTTON_THREE    9013
+#define ID_BUTTON_FOUR     9014
+#define ID_BUTTON_FIVE     9015
+
 
 global_variable platform_api *Platform;
 
@@ -36,16 +41,22 @@ CreateControls(platform_api *PlatformAPI)
     Platform->AddSpacer(ID_TOP_PANEL, SIZE_FILL);
     
     // NOTE(kstandbridge): Bottom fill
-    Platform->AddGroupBox(ID_MAIN, ID_BOTTOM_GROUP, "Bottom Group", ControlLayout_Horizontal);
+    Platform->AddGroupBox(ID_MAIN, ID_BOTTOM_GROUP, "Bottom Group", ControlLayout_Verticle);
     
     Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_ONE, "ONE", SIZE_FILL);
+    Platform->AddGroupBox(ID_BOTTOM_GROUP, ID_GROUP_MID, "MIDDLE", ControlLayout_Horizontal);
     Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_TWO, "TWO", SIZE_FILL);
-    Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_THREE, "THREE", SIZE_FILL);
+    
+    Platform->AddButton(ID_GROUP_MID, ID_BUTTON_THREE, "THREE", SIZE_FILL);
+    Platform->AddButton(ID_GROUP_MID, ID_BUTTON_FOUR, "FOUR", SIZE_FILL);
+    Platform->AddButton(ID_GROUP_MID, ID_BUTTON_FIVE, "FIVE", SIZE_FILL);
+    Platform->SetControlMargin(ID_BUTTON_FOUR, 0.0f, 10.0f, 10.0f, 5.0f);
+    
     /*
     Platform->AddListView(ID_BOTTOM_PANEL, ID_WORLD_LIST, SIZE_FILL);
-    Platform->AddListViewColumn(ID_WORLD_LIST, "Date");
-    Platform->AddListViewColumn(ID_WORLD_LIST, "Name");
-    */
+        Platform->AddListViewColumn(ID_WORLD_LIST, "Date");
+        Platform->AddListViewColumn(ID_WORLD_LIST, "Name");
+        */
     //Platform->AddListViewProgressColumn(ID_WORLD_LIST, "Status");
     
 }

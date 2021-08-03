@@ -102,6 +102,7 @@ typedef void add_panel(s64 ParentId, s64 ControlId, control_layout Layout);
 typedef void add_spacer(s64 ParentId, r32 Size);
 typedef void add_static(s64 ParentId, s64 ControlId, char *Text, r32 Size);
 
+typedef void set_control_margin(s64 ControlId, r32 Top, r32 Left, r32 Right, r32 Bottom);
 
 
 // NOTE(kstandbridge): Platform API
@@ -117,6 +118,9 @@ struct platform_api
     add_panel *AddPanel;
     add_spacer *AddSpacer;
     add_static *AddStatic;
+    
+    set_control_margin *SetControlMargin;
+    
     
     display_message *DisplayMessage;
     get_control_text *GetControlText;
