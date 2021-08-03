@@ -97,6 +97,7 @@ enum control_layout
 };
 typedef void add_button(s64 ParentId, s64 ControlId, char *Text, r32 Size);
 typedef void add_edit(s64 ParentId, s64 ControlId, char *Text, r32 Size);
+typedef void add_group_box(s64 ParentId, s64 ControlId, char *Text, control_layout Layout);
 typedef void add_panel(s64 ParentId, s64 ControlId, control_layout Layout);
 typedef void add_spacer(s64 ParentId, r32 Size);
 typedef void add_static(s64 ParentId, s64 ControlId, char *Text, r32 Size);
@@ -112,6 +113,7 @@ struct platform_api
 {
     add_button *AddButton;
     add_edit *AddEdit;
+    add_group_box *AddGroupBox;
     add_panel *AddPanel;
     add_spacer *AddSpacer;
     add_static *AddStatic;

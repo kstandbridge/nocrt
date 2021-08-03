@@ -2,6 +2,8 @@
 
 /* TODO(kstandbridge): 
 
+- Padding could be set during GetWindowRect
+- Margins could be set during GetWindowRect
  - ListView control
  / - List view columns
 / - List view get data for row/column
@@ -9,9 +11,9 @@
 - Splitter with drag/drop to resize panels
 - Menus
 - Status bar
-- Size/Positioning
-/ - Min and Max
-/ - Percentage
+- Set a min/max size for controls?
+  - Specify size percentages?
+
 */
 
 #include "nocrt_platform.h"

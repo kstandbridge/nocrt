@@ -21,7 +21,8 @@ del lock.tmp
 
 REM Platform
 rc -nologo ..\nocrt\code\win32_resource.rc
-cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /NODEFAULTLIB /SUBSYSTEM:windows %CommonLinkerFlags%
+cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /SUBSYSTEM:windows %CommonLinkerFlags%
+:: cl %CommonCompilerFlags% -Od ..\nocrt\code\win32_nocrt.cpp ..\nocrt\code\nocrt_msvc.c ..\nocrt\code\win32_resource.res /link /NODEFAULTLIB /SUBSYSTEM:windows %CommonLinkerFlags%
 
 REM Cleanup
 del *.obj

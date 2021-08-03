@@ -10,7 +10,12 @@
 #define ID_TOP_EDIT        1103
 #define ID_TOP_BUTTON      1104
 
-#define ID_BOTTOM_PANEL    1200
+#define ID_BOTTOM_GROUP    1200
+
+
+#define ID_BUTTON_ONE      9001
+#define ID_BUTTON_TWO      9002
+#define ID_BUTTON_THREE    9003
 
 global_variable platform_api *Platform;
 
@@ -31,7 +36,11 @@ CreateControls(platform_api *PlatformAPI)
     Platform->AddSpacer(ID_TOP_PANEL, SIZE_FILL);
     
     // NOTE(kstandbridge): Bottom fill
-    Platform->AddPanel(ID_MAIN, ID_BOTTOM_PANEL, ControlLayout_Horizontal);
+    Platform->AddGroupBox(ID_MAIN, ID_BOTTOM_GROUP, "Bottom Group", ControlLayout_Horizontal);
+    
+    Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_ONE, "ONE", SIZE_FILL);
+    Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_TWO, "TWO", SIZE_FILL);
+    Platform->AddButton(ID_BOTTOM_GROUP, ID_BUTTON_THREE, "THREE", SIZE_FILL);
     /*
     Platform->AddListView(ID_BOTTOM_PANEL, ID_WORLD_LIST, SIZE_FILL);
     Platform->AddListViewColumn(ID_WORLD_LIST, "Date");
@@ -48,7 +57,7 @@ HandleCommand(s64 Id)
     {
         char Buffer[128];
         Platform->GetControlText(ID_TOP_EDIT, Buffer, sizeof(Buffer));
-        Platform->SetControlText(ID_BOTTOM_PANEL, Buffer);
+        Platform->SetControlText(ID_BOTTOM_GROUP, Buffer);
         
     }
 }

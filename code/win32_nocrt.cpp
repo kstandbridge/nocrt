@@ -201,7 +201,7 @@ Win32SizeControls_(control *Controls)
         else
         {
             X = (r32)Rect.right;
-            Y = 0;
+            Y = (r32)Rect.top;
             Width = ((r32)Rect.right - (r32)Rect.left - TotalSize)/ControlWithoutSize;
             Height = (r32)Rect.bottom - (r32)Rect.top;
         }
@@ -389,6 +389,26 @@ AddPanel(s64 ParentId, s64 ControlId, control_layout Layout)
 }
 
 internal void
+AddGroupBox(s64 ParentId, s64 ControlId, char *Text, control_layout Layout)
+{
+    control *Control = CreateControl_(ParentId, ControlId, SIZE_FILL, ControlType_Panel);
+    Control->Layout = Layout;
+    
+    Control->Hwnd = Win32.CreateWindowExA(0,
+                                          "BUTTON",
+                                          Text,
+                                          WS_VISIBLE|WS_CHILD|BS_GROUPBOX,
+                                          10, 10,
+                                          100, 100,
+                                          Win32State.WindowHwnd, 
+                                          (HMENU)Control->Id, 
+                                          Win32State.Instance, 
+                                          0);
+    Assert(Control->Hwnd);
+    SetDefaultFont(Control->Hwnd);
+}
+
+internal void
 AddSpacer(s64 ParentId, r32 Size)
 {
     control *Control = CreateControl_(ParentId, IDC_STATIC, Size, ControlType_Spacer);
@@ -455,6 +475,7 @@ Win32InitPlatformAPI(platform_api *PlatformAPI)
     PlatformAPI->AddButton = AddButton;
     PlatformAPI->AddEdit = AddEdit;
     PlatformAPI->AddPanel = AddPanel;
+    PlatformAPI->AddGroupBox = AddGroupBox;
     PlatformAPI->AddSpacer = AddSpacer;
     PlatformAPI->AddStatic = AddStatic;
     
